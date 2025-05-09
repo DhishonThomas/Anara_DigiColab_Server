@@ -1,0 +1,40 @@
+name: CI/CD Pipeline - Anara_DigiColab_Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest -f ./server/Dockerfile .
+        docker push ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: 22  # unless you're using a custom SSH port
+        script: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest
+          docker-compose -f /home/ubuntu/app/anara/docker-compose.yml down
+          docker-compose -f /home/ubuntu/app/anara/docker-compose.yml up -d
