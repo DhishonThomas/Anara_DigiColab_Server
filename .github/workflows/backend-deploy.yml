@@ -36,5 +36,5 @@ jobs:
         port: 22  # unless you're using a custom SSH port
         script: |
           docker pull ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest
-          docker-compose -f /home/ubuntu/app/anara/docker-compose.yml down
-          docker-compose -f /home/ubuntu/app/anara/docker-compose.yml up -d
+          docker compose -f /home/ubuntu/app/anara/docker-compose.yml down
+          docker compose -f /home/ubuntu/app/anara/docker-compose.yml up -d
