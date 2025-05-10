@@ -1,40 +1,41 @@
 # Base image
 FROM node:18
 
-# Install necessary dependencies for Chrome/Chromium
+# Install Puppeteer dependencies
 RUN apt-get update && apt-get install -y \
-    libgtk-3-0 \
-    libgbm-dev \
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libgdk-pixbuf2.0-0 \
+    libnspr4 \
     libnss3 \
     libx11-xcb1 \
     libxcomposite1 \
     libxdamage1 \
-    libasound2 \
-    libdbus-glib-1-2 \
-    libxtst6 \
-    xauth \
-    xvfb \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
-    
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-
-ENV DISPLAY=:99
-
-# Set working directory in the container
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and lock file
+# Copy package files and install
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy all project files
+# Copy the rest of the application
 COPY . .
 
-# Expose the port your app listens on (adjust if different)
+# Expose app port
 EXPOSE 4000
 
-# Run the application
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x1024x24 & npm start"]
+# Run the app
+CMD ["npm", "start"]
