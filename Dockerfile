@@ -6,14 +6,17 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     libgbm-dev \
     libnss3 \
-    libxshm1 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
     libasound2 \
     libdbus-glib-1-2 \
     libxtst6 \
     xauth \
     xvfb \
-    --no-install-recommends
-
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+    
 # Set up xvfb (Virtual X Framebuffer)
 RUN Xvfb :99 -screen 0 1280x1024x24 &
 
