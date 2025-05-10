@@ -1,7 +1,7 @@
-# Base image
-FROM node:18
+# Use node base image
+FROM node:18-slim
 
-# Install Puppeteer dependencies
+# Puppeteer v20+ requires system dependencies for Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -19,23 +19,29 @@ RUN apt-get update && apt-get install -y \
     libxcomposite1 \
     libxdamage1 \
     libxrandr2 \
+    libxss1 \
+    libxtst6 \
     xdg-utils \
-    --no-install-recommends \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    --no-install-recommends && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy package files and install
+# Install app dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of the application
+# Copy app code
 COPY . .
 
-# Expose app port
+# Puppeteer: prevent downloading Chromium again (you already have it)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
+# Expose your app's port
 EXPOSE 4000
 
-# Run the app
+# Run your app
 CMD ["npm", "start"]
