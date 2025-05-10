@@ -23,8 +23,8 @@ export const sendEmailOTP = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Email is already registered.", 400));
   }
 
-  const otp = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit OTP
-  const otpExpire = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const otpExpire = Date.now() + 5 * 60 * 1000;
 
   otpStore.set(email, { otp, otpExpire });
 
@@ -98,7 +98,6 @@ export const verifyEmailOTP = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Invalid OTP.", 400));
   }
 
-  // Mark OTP as verified
   otpStore.set(email, { verified: true });
 
   res.status(200).json({
@@ -135,18 +134,16 @@ export const register = catchAsyncError(async (req, res, next) => {
   } = req.body;
 
   try {
-    if (!name || !email || !phone || !password || !guardian || !age || !address || !currentAddress || !dob || !gender || !bankAccNumber || !bankName ||!ifsc || !educationDegree || !educationYearOfCompletion || !employmentStatus 
+    if (!name || !email || !phone || !password || !guardian || !age || !address || !currentAddress || !dob || !gender || !bankAccNumber || !bankName || !ifsc || !educationDegree || !educationYearOfCompletion || !employmentStatus
       || !monthlyIncomeRange
     ) {
       return next(new ErrorHandler("All fields are required.", 400));
     }
 
-    // Check if undertaking confirmation is provided
     if (undertaking !== 'true' && undertaking !== true) {
       return next(new ErrorHandler("Confirmation is required.", 400));
     }
 
-    // Check if monthly income range is provided when employment status is "Employed"
     if (employmentStatus === "Employed" && !monthlyIncomeRange) {
       return next(new ErrorHandler("Monthly income range is required for employed volunteers.", 400));
     }
@@ -172,7 +169,6 @@ export const register = catchAsyncError(async (req, res, next) => {
     const educationCertificate = await uploadToCloudinary(req.files.educationCertificate[0].buffer, "documents");
     const bankDocument = await uploadToCloudinary(req.files.bankDocument[0].buffer, "documents");
 
-    // Handle the optional police verification document
     let policeVerification = null;
     if (req.files.policeVerification && req.files.policeVerification[0]) {
       policeVerification = await uploadToCloudinary(req.files.policeVerification[0].buffer, "documents");
@@ -194,7 +190,6 @@ export const register = catchAsyncError(async (req, res, next) => {
       ifsc,
       employmentStatus,
       image,
-      // undertaking is now a boolean, not a document URL
       undertaking: undertaking === 'true' || undertaking === true,
       educationQualification: {
         degree: educationDegree,
@@ -207,30 +202,27 @@ export const register = catchAsyncError(async (req, res, next) => {
       tempRegNumber,
     };
 
-    // Only add policeVerification to volunteerData if it exists
     if (policeVerification) {
       volunteerData.policeVerification = policeVerification;
     }
 
-    // Add monthlyIncomeRange only if employment status is "Employed"
     if (employmentStatus === "Employed") {
       volunteerData.monthlyIncomeRange = monthlyIncomeRange;
     }
 
     const volunteer = await Volunteer.create(volunteerData);
 
-    // Send welcome email to the volunteer
     try {
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: "hasanulbanna2255@gmail.com",
-          pass: "wflv nsjo ofba rvov",
+          user: "contactus@anaraskills.org",
+          pass: "zcqs pmzb oahp msgl",
         },
       });
 
       const mailOptions = {
-        from: "hasanulbanna2255@gmail.com",
+        from: "contactus@anaraskills.org",
         to: email,
         subject: "Welcome to Anara Skills Foundation - Registration Successful",
         html: `
@@ -397,7 +389,6 @@ export const getUsersUnderVolunteer = catchAsyncError(async (req, res, next) => 
 
   const regNumber = volunteer.tempRegNumber;
 
-  // Fetch all fields of users under the volunteer
   const users = await User.find({ volunteerRegNum: regNumber }).sort({ createdAt: -1 });
 
   const verifiedUsers = users.filter(user => user.accountVerified).length;

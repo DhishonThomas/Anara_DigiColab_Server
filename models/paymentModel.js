@@ -16,7 +16,6 @@ const paymentRequest = new mongoose.Schema({
     },
     amount: {
         type: Number,
-        required: true
     },
     status: {
         type: String,
@@ -48,19 +47,18 @@ const paymentRequest = new mongoose.Schema({
     }
 });
 
+// Calculate payment amount based on user count
+paymentRequest.pre("save", function (next) {
+    if ((!this.isModified("userCount") && !this.isNew)) return next();
 
-//Calculate payment amount based on user count
-paymentRequest.pre("save",function(next){
-    if(!this.isModified("userCount")) return next();
-
-    if(this.userCount <=50) {
+    if (this.userCount === 50) {
         this.amount = 50;
-    } else if(this.userCount <=200) {
+    } else if (this.userCount === 200) {
         this.amount = 75;
-    } else {
+    } else if (this.userCount > 200) {
         this.amount = 100;
     }
     next();
 });
 
-export const PaymentRequest = mongoose.model("paymentRequest", paymentRequest)
+export const PaymentRequest = mongoose.model("paymentRequest", paymentRequest);
