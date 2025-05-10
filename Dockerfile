@@ -17,8 +17,7 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
     
-# Set up xvfb (Virtual X Framebuffer)
-RUN Xvfb :99 -screen 0 1280x1024x24 &
+
 
 ENV DISPLAY=:99
 
@@ -38,4 +37,4 @@ COPY . .
 EXPOSE 4000
 
 # Run the application
-CMD ["npm", "start"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x1024x24 & npm start"]
