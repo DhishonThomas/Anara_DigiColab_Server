@@ -1,10 +1,6 @@
-# Base image
-FROM node:18
+FROM node:18-slim
 
-# Set working directory
-WORKDIR /usr/src/app
-
-# Install Chromium dependencies for Puppeteer
+# Install Puppeteer Chromium dependencies
 RUN apt-get update && apt-get install -y \
   wget \
   ca-certificates \
@@ -28,13 +24,18 @@ RUN apt-get update && apt-get install -y \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# Set working dir
+WORKDIR /usr/src/app
+
+# Install dependencies
 COPY package*.json ./
 RUN npm install
+
+# Copy source
 COPY . .
 
-# Expose port
+# Expose app port
 EXPOSE 4000
 
-# Start app
+# Start the app
 CMD ["npm", "start"]
