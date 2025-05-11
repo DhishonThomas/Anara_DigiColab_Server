@@ -1,5 +1,4 @@
 FROM node:18-slim
-
 # Install Puppeteer Chromium dependencies
 RUN apt-get update && apt-get install -y \
 wget \
@@ -40,3 +39,4 @@ EXPOSE 4000
 
 # Start the app
 CMD ["npm", "start"]
+
