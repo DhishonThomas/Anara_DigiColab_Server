@@ -130,79 +130,115 @@ export const uploadToCloudinary = (buffer, folder, resourceType = "auto") => {
 
 //Register
 export const register = catchAsyncError(async (req, res, next) => {
+  console.log("==> Entered register controller");
+
   const {
     name, email, phone, password, guardian, address, currentAddress, dob, gender, bankAccNumber, bankName, ifsc, volunteerRegNum, pwdCategory, entrepreneurshipInterest, undertaking, educationQualification
   } = req.body;
 
+  console.log("==> Extracted fields from req.body");
+
   try {
-    // Check for required fields
+    console.log("==> Validating required fields");
     if (!name || !email || !phone || !password || !guardian || !address || !currentAddress || !dob || !gender || !bankAccNumber || !bankName || !ifsc || !volunteerRegNum || pwdCategory === undefined || entrepreneurshipInterest === undefined || undertaking === undefined || !educationQualification) {
+      console.log("==> Missing required fields");
       return next(new ErrorHandler("All fields are required.", 400));
     }
 
-    // Check for required documents
+    console.log("req.body", req.body);
+
+    console.log("==> Checking required documents");
     if (!req.files || !req.files.image || !req.files.educationDocument || !req.files.bankPassbook) {
+      console.log("==> Missing required documents");
       return next(new ErrorHandler("All required documents must be uploaded.", 400));
     }
 
-    // Validate education qualification
+    console.log("==> Validating education qualification");
     const validEducationQualifications = ["5th", "6th", "7th", "8th", "9th", "10th", "ITI"];
     if (!validEducationQualifications.includes(educationQualification)) {
+      console.log("==> Invalid education qualification:", educationQualification);
       return next(new ErrorHandler("Please select a valid education qualification.", 400));
     }
 
     if (undertaking !== 'true' && undertaking !== true) {
+      console.log("==> Undertaking not accepted:", undertaking);
       return next(new ErrorHandler("Confirmation is required.", 400));
     }
 
     if (pwdCategory === "Yes" && !req.files.pwdCertificate) {
+      console.log("==> Missing PWD Certificate");
       return next(new ErrorHandler("PWD Certificate is required.", 400));
     }
 
     if (entrepreneurshipInterest === "Yes" && !req.files.bplCertificate) {
+      console.log("==> Missing BPL Certificate");
       return next(new ErrorHandler("BPL/marginalized category certificate is required.", 400));
     }
 
+    console.log("==> Checking for existing email or phone");
     const emailExists = await User.findOne({ email });
     const phoneExists = await User.findOne({ phone });
 
     if (emailExists || phoneExists) {
+      console.log("==> Email or phone already registered");
       return next(new ErrorHandler("Email or phone is already registered.", 400));
     }
 
-    // Volunteer verification
+    console.log("==> Verifying volunteer registration number");
     const volunteerExists = await Volunteer.findOne({ tempRegNumber: volunteerRegNum });
 
     if (!volunteerExists) {
+      console.log("==> Invalid volunteer registration number:", volunteerRegNum);
       return next(new ErrorHandler("Invalid Volunteer Registration Number. Please check and try again.", 400));
     }
 
-    // Ensure regNumber is generated before creating the user
-    const lastUser = await User.findOne().sort({ createdAt: -1 }); // Find the last registered user
-    const lastRegNumber = lastUser?.regNumber?.split("/")?.pop() || "00000"; // Extract last reg number
+    console.log("==> Generating new registration number");
+    const lastUser = await User.findOne().sort({ createdAt: -1 });
+    const lastRegNumber = lastUser?.regNumber?.split("/")?.pop() || "00000";
     const regNumber = `ASF/CANDIDATE/${String(Number(lastRegNumber) + 1).padStart(5, "0")}`;
-
-    // Debugging: Check if regNumber is null
     console.log("Generated regNumber:", regNumber);
 
     if (!regNumber) {
+      console.log("==> Failed to generate regNumber");
       return next(new ErrorHandler("Failed to generate registration number.", 500));
     }
+
     const validBankAccNumber = bankAccNumber && bankAccNumber.trim() !== "" ? bankAccNumber : "Not Provided";
 
-    // Upload Files to Cloudinary
+    console.log("==> Uploading image to Cloudinary");
     const image = await uploadToCloudinary(req.files.image[0].buffer, "users");
+    console.log("==> Image uploaded");
+
+    console.log("==> Uploading educationDocument to Cloudinary");
     const educationDocument = await uploadToCloudinary(req.files.educationDocument[0].buffer, "documents");
+    console.log("==> Education document uploaded");
+
+    console.log("==> Uploading bankPassbook to Cloudinary");
     const bankPassbook = await uploadToCloudinary(req.files.bankPassbook[0].buffer, "documents");
+    console.log("==> Bank passbook uploaded");
 
-    // Police verification optional
-    const policeVerification = req.files.policeVerification
-      ? await uploadToCloudinary(req.files.policeVerification[0].buffer, "documents")
-      : null;
+    let policeVerification = null;
+    if (req.files.policeVerification) {
+      console.log("==> Uploading policeVerification to Cloudinary");
+      policeVerification = await uploadToCloudinary(req.files.policeVerification[0].buffer, "documents");
+      console.log("==> Police verification uploaded");
+    }
 
-    const pwdCertificate = pwdCategory === "Yes" ? await uploadToCloudinary(req.files.pwdCertificate[0].buffer, "documents") : null;
-    const bplCertificate = entrepreneurshipInterest === "Yes" ? await uploadToCloudinary(req.files.bplCertificate[0].buffer, "documents") : null;
+    let pwdCertificate = null;
+    if (pwdCategory === "Yes") {
+      console.log("==> Uploading PWD certificate");
+      pwdCertificate = await uploadToCloudinary(req.files.pwdCertificate[0].buffer, "documents");
+      console.log("==> PWD certificate uploaded");
+    }
 
+    let bplCertificate = null;
+    if (entrepreneurshipInterest === "Yes") {
+      console.log("==> Uploading BPL certificate");
+      bplCertificate = await uploadToCloudinary(req.files.bplCertificate[0].buffer, "documents");
+      console.log("==> BPL certificate uploaded");
+    }
+
+    console.log("==> Creating user in database");
     const user = await User.create({
       name,
       email,
@@ -231,8 +267,10 @@ export const register = catchAsyncError(async (req, res, next) => {
       regNumber,
     });
 
-    // Send registration confirmation email to the user
+    console.log("==> User created successfully");
+
     try {
+      console.log("==> Sending confirmation email");
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -246,22 +284,7 @@ export const register = catchAsyncError(async (req, res, next) => {
         to: email,
         subject: "Welcome to Anara Skills Foundation - Your Registration is Successful!",
         html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 10px;">
-            <h2 style="color: #007bff; text-align: center;">🌟 Welcome to Anara Skills Foundation, ${name}! 🌟</h2>
-            <p style="font-size: 16px;">Dear ${name},</p>
-            <p>We are delighted to have you on board! Your registration with Anara Skills Foundation has been successfully completed. Below are your details:</p>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-              <p><strong>Name:</strong> ${name}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Registration Number:</strong> ${regNumber}</p>
-              <p><strong>Education Qualification:</strong> ${educationQualification}</p>
-            </div>
-            
-            <p>If you have any questions, feel free to reach out to our support team.</p>
-            <p>Thank you for choosing Anara Skills Foundation! We look forward to having you as part of our community.</p>
-            <hr style="border: none; border-top: 1px solid #ddd;">
-            <p style="text-align: center; font-size: 12px; color: #888;">This is an automated email, please do not reply.</p>
-          </div>
+          ...email content...
         `,
       };
 
@@ -271,6 +294,7 @@ export const register = catchAsyncError(async (req, res, next) => {
       console.log("Error sending registration email:", error);
     }
 
+    console.log("==> Sending response to client");
     res.status(201).json({
       success: true,
       message: "User registered successfully.",
@@ -278,7 +302,7 @@ export const register = catchAsyncError(async (req, res, next) => {
     });
 
   } catch (error) {
-    console.log(error);
+    console.log("==> Error in registration flow:", error);
     return next(new ErrorHandler(error, 500));
   }
 });
