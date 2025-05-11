@@ -35,6 +35,8 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         port: 22
         script: |
+          docker rm -f $(docker ps -aq --filter "ancestor=${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest") || true
+          docker rmi ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest || true
           docker pull ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest
           docker compose -f /home/ubuntu/app/anara/docker-compose.yml down
           docker compose -f /home/ubuntu/app/anara/docker-compose.yml up -d
