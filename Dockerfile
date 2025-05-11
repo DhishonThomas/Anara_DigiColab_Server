@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM node:18
 # Install Puppeteer Chromium dependencies
 RUN apt-get update && apt-get install -y \
 wget \
