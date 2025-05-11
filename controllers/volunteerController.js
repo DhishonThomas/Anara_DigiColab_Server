@@ -9,6 +9,9 @@ import { User } from "../models/userModel.js";
 import { cloudinaryInstance } from "../config/cloudinary.js";
 import streamifier from "streamifier";
 const otpStore = new Map();
+import dotenv from "dotenv";
+dotenv.config({ path: "./config.env" });
+
 
 //Send email otp
 export const sendEmailOTP = catchAsyncError(async (req, res, next) => {
@@ -134,11 +137,33 @@ export const register = catchAsyncError(async (req, res, next) => {
   } = req.body;
 
   try {
-    if (!name || !email || !phone || !password || !guardian || !age || !address || !currentAddress || !dob || !gender || !bankAccNumber || !bankName || !ifsc || !educationDegree || !educationYearOfCompletion || !employmentStatus
-      || !monthlyIncomeRange
-    ) {
-      return next(new ErrorHandler("All fields are required.", 400));
-    }
+    const requiredFields = {
+      name,
+      email,
+      phone,
+      password,
+      guardian,
+      age,
+      address,
+      currentAddress,
+      dob,
+      gender,
+      bankAccNumber,
+      bankName,
+      ifsc,
+      educationDegree,
+      educationYearOfCompletion,
+      employmentStatus,
+      undertaking
+    };
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value)
+      .map(([key]) => key);
+    
+    if (missingFields.length > 0) {
+      return next(new ErrorHandler(`Missing required field(s): ${missingFields.join(', ')}`, 400));
+    }    
 
     if (undertaking !== 'true' && undertaking !== true) {
       return next(new ErrorHandler("Confirmation is required.", 400));
@@ -216,8 +241,8 @@ export const register = catchAsyncError(async (req, res, next) => {
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: "contactus@anaraskills.org",
-          pass: "zcqs pmzb oahp msgl",
+          user: process.env.SMTP_MAIL,
+          pass: process.env.SMTP_PASSWORD,
         },
       });
 
