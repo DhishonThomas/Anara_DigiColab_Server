@@ -64,4 +64,3 @@ connection();
 
 app.use(errorMiddleware);
 
-//this is commented for testing purpose of the docker. by Dhishon Thomas.

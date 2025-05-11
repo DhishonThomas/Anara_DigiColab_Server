@@ -222,7 +222,6 @@ export const register = catchAsyncError(async (req, res, next) => {
         certificate: educationCertificate
       },
       bankDocument,
-      monthlyIncomeRange,
       accountVerified: true,
       tempRegNumber,
     };
