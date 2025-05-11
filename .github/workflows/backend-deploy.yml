@@ -33,7 +33,7 @@ jobs:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
-        port: 22  # unless you're using a custom SSH port
+        port: 22
         script: |
           docker pull ${{ secrets.DOCKER_USERNAME }}/anara_digicolab_server:latest
           docker compose -f /home/ubuntu/app/anara/docker-compose.yml down
