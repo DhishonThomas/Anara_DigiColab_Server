@@ -3,6 +3,10 @@ import { cloudinaryInstance } from "../config/cloudinary.js";
 import PDFFile from '../models/pdfFile.js';
 import fs from 'fs/promises';
 import path from 'path';
+import nodemailer from "nodemailer";
+import axios from "axios";
+import SentMessage from "../models/messageModel.js";
+import { LetterHead } from '../models/letterHeadModel.js';
 
 export const generateLetterheadPDF = async (req, res) => {
     console.log("📝 PDF Generation triggered");
@@ -110,12 +114,12 @@ export const editLetterheadPDF = async (req, res) => {
         await fs.writeFile(tempPath, pdfBuffer);
         
         // Delete the old PDF from Cloudinary
-        if (existingPDF.public_id) {
-            console.log(`Attempting to delete Cloudinary file with public_id: ${existingPDF.public_id}`);
-            await cloudinaryInstance.uploader.destroy(existingPDF.public_id, { resource_type: "raw" });
-        } else {
-            console.log("No public_id found for existing PDF, skipping Cloudinary delete");
-        }
+        // if (existingPDF.public_id) {
+        //     console.log(`Attempting to delete Cloudinary file with public_id: ${existingPDF.public_id}`);
+        //     await cloudinaryInstance.uploader.destroy(existingPDF.public_id, { resource_type: "raw" });
+        // } else {
+        //     console.log("No public_id found for existing PDF, skipping Cloudinary delete");
+        // }
         
         // Upload new PDF to Cloudinary
         const uploadResult = await cloudinaryInstance.uploader.upload(tempPath, {
@@ -142,3 +146,100 @@ export const editLetterheadPDF = async (req, res) => {
         res.status(500).json({ error: "Failed to update PDF" });
     }
 };
+
+export const sendMail = async(req, res)=>{
+    const { email, subject, message, cloudinaryUrl, letterHeadId } = req.body;
+    console.log("Sending email...");
+    try{
+        if (!email || !subject || !message || !cloudinaryUrl || !letterHeadId) {
+            return res.status(400).json({
+              error: "All fields (email, subject, message, cloudinaryUrl) are required.",
+            });
+          }
+          
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: "Invalid email format." });
+        }
+
+        const response = await axios.get(cloudinaryUrl, { responseType: "arraybuffer" });
+        const pdfBuffer = Buffer.from(response.data, "binary");
+
+    const mailOptions = {
+      from: process.env.SMTP_MAIL,
+      to: email,
+      subject: subject,
+      text: message,
+      attachments: [
+        {
+          filename: "letterhead.pdf",
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    };
+
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.SMTP_MAIL,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      });
+
+    const info = await transporter.sendMail(mailOptions);
+
+    const letterHead = await LetterHead.findById({_id:letterHeadId});
+    if(!letterHead){
+        return res.status(400).json({ message: "Letterhead not found" });
+    }
+    letterHead.isSent = true;
+    await letterHead.save();
+
+    console.log("Email sent successfully.");
+
+    await SentMessage.create({
+        email,
+        subject,
+        message,
+        cloudinaryUrl,
+      });
+
+    res.status(200).json({ message: "Email sent successfully." });
+    }catch(err){
+        console.error("❌ Email Error:", err);
+        res.status(500).json({ error: "Failed to send email" });
+    }
+};
+
+export const getSentMessages = async (req, res) => {
+    try {
+      const { email } = req.body;
+  
+      let query = {};
+      if (email) {
+        query.email = email;
+      }
+  
+      const sentMessages = await SentMessage.find(query);
+      res.status(200).json(sentMessages);
+    } catch (err) {
+      console.error("❌ Get Sent Messages Error:", err);
+      res.status(500).json({ error: "Failed to get sent messages" });
+    }
+  };
+  
+  export const getLetterHeads = async(req, res)=>{
+    try {
+        const {id} = req.body;
+        let query = {};
+        if(id){
+            query._id = id;
+        }
+        const letterheads = await PDFFile.find(query);
+        res.status(200).json(letterheads);
+      } catch (err) {
+        console.error("❌ Get Letterheads Error:", err);
+        res.status(500).json({ error: "Failed to get letterheads" });
+      }
+  }

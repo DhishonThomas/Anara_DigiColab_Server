@@ -283,10 +283,10 @@ export const editFile = async (req, res) => {
 
     const oldFile = letterHead.file_link[fileIndex];
     const oldPublicId = oldFile.public_id;
-
+    if(!letterHead.isSent){
     // Step 1: Delete from Cloudinary
     await cloudinary.uploader.destroy(oldPublicId);
-
+    }
     const file = req.files && req.files[0];
     console.log("Incoming body:", req.body);
 
@@ -309,12 +309,21 @@ export const editFile = async (req, res) => {
       ).end(file.buffer);
     });
 
-    // Step 3: Update file_link entry
-    letterHead.file_link[fileIndex] = {
+    if(letterHead.isSent){
+      // Step 3: Update file_link entry
+    letterHead.file_link.push({
       public_id: uploadResult.public_id,
       url: uploadResult.secure_url,
       file_name: uploadedFileName || file.originalname,
-    };
+    });
+    }else{
+      letterHead.file_link[fileIndex] = {
+        public_id: uploadResult.public_id,
+        url: uploadResult.secure_url,
+        file_name: uploadedFileName || file.originalname,
+      };
+    }
+    
     
 
     // Optional: update other fields
