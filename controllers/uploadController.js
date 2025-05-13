@@ -268,20 +268,22 @@ export const editFile = async (req, res) => {
   const { id } = req.params;
   const { file_ids, subject, body_text, image_id } = req.body;
   console.log(file_ids);
+  const fileIds = JSON.parse(req.body.file_ids);
+  console.log(fileIds);
   try {
     const letterHead = await LetterHead.findById(id);
     if (!letterHead) {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    if (!Array.isArray(file_ids)) {
-      return res.status(400).json({ message: "file_ids must be an array" });
+    if (!Array.isArray(fileIds)) {
+      return res.status(400).json({ message: "fileIds must be an array" });
     }
 
 
     // Delete existing files if not sent
     if (!letterHead.isSent) {
-      for (const fileId of file_ids) {
+      for (const fileId of fileIds) {
         const fileIndex = letterHead.file_link.findIndex(f => f.public_id === fileId);
         const idIndex = letterHead.public_id.findIndex(f => f === fileId);
         if (fileIndex !== -1) {

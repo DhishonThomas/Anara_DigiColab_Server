@@ -38,7 +38,7 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     }, // Your frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
     credentials: true, // Allow cookies and authorization headers
   })
 );
@@ -63,4 +63,3 @@ removeUnverifiedAccounts();
 connection();
 
 app.use(errorMiddleware);
-
