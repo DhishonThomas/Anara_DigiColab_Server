@@ -24,26 +24,27 @@ const __dirname = path.dirname(__filename);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:4000",
-  "https://skills.anaraskills.org",
   "https://digi-colab-roan.vercel.app",
+  "https://skills.anaraskills.org",
+  "http://localhost:4000",
+  "http://localhost:3000",
 ];
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    }, // Your frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
+    credentials: true, // Allow cookies and authorization headers
+  })
+);
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));              // ✅ Attach CORS middleware
-app.options("*", cors(corsOptions));     // ✅ Handle preflight requests
+// Optional: Handle preflight requests manually
+app.options("*", cors());
 
 
 app.use(cookieParser());
