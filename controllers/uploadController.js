@@ -166,10 +166,12 @@ export const uploadFile = async (req, res) => {
    
     const file_link = [];
     const publicIds = [];
-
+   const filesMeta = req.body.files || [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const customName = body[`files[${i}][name]`] || file.originalname?.split('.')[0];
+      const fileMeta = Array.isArray(filesMeta) ? filesMeta[i] : null;
+
+      const uploadedFileName = fileMeta?.name || file.originalname;
       // console.log(body[`files[${i}][name]`]);
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
@@ -188,7 +190,7 @@ export const uploadFile = async (req, res) => {
       file_link.push({
         public_id: result.public_id,
         url: result.secure_url,
-        file_name: customName
+        file_name: uploadedFileName
       });
       publicIds.push(result.public_id);
     }
@@ -264,67 +266,68 @@ try {
 
 export const editFile = async (req, res) => {
   const { id } = req.params;
-  const { file_name, subject, body_text, image_id } = req.body;
-
+  const { file_ids, subject, body_text, image_id } = req.body;
+  console.log(file_ids);
   try {
     const letterHead = await LetterHead.findById(id);
     if (!letterHead) {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    const normalizedInputName = file_name.toLowerCase().trim();
-    const fileIndex = letterHead.file_link.findIndex(f => 
-      f.file_name.toLowerCase().trim() === normalizedInputName
-    );
-
-    if (fileIndex === -1) {
-      return res.status(404).json({ message: "File not found in file_link" });
+    if (!Array.isArray(file_ids)) {
+      return res.status(400).json({ message: "file_ids must be an array" });
     }
 
-    const oldFile = letterHead.file_link[fileIndex];
-    const oldPublicId = oldFile.public_id;
-    if(!letterHead.isSent){
-    // Step 1: Delete from Cloudinary
-    await cloudinary.uploader.destroy(oldPublicId);
-    }
-    const file = req.files && req.files[0];
-    console.log("Incoming body:", req.body);
 
-    const uploadedFileName = req.body.files?.[0]?.name || file.originalname;
-
-    console.log(uploadedFileName);
-    if (!file || !file.buffer || file.buffer.length === 0) {
-      return res.status(400).json({ message: "No file provided or file is empty" });
-    }
-
-        // console.log(file);
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { folder: "files", resource_type: "auto" },
-        (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
+    // Delete existing files if not sent
+    if (!letterHead.isSent) {
+      for (const fileId of file_ids) {
+        const fileIndex = letterHead.file_link.findIndex(f => f.public_id === fileId);
+        const idIndex = letterHead.public_id.findIndex(f => f === fileId);
+        if (fileIndex !== -1) {
+          await cloudinary.uploader.destroy(fileId);
+          letterHead.file_link.splice(fileIndex, 1); // Remove from DB array
+          letterHead.public_id.splice(idIndex, 1);
         }
-      ).end(file.buffer);
-    });
+      }
+    }
+    
+    const filesMeta = req.body.files || [];
 
-    if(letterHead.isSent){
-      // Step 3: Update file_link entry
-    letterHead.file_link.push({
-      public_id: uploadResult.public_id,
-      url: uploadResult.secure_url,
-      file_name: uploadedFileName || file.originalname,
-    });
-    }else{
-      letterHead.file_link[fileIndex] = {
+    const uploadedFiles = [];
+
+      for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      const fileMeta = Array.isArray(filesMeta) ? filesMeta[i] : null;
+
+      const uploadedFileName = fileMeta?.name || file.originalname;
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: "files", resource_type: "auto" },
+          (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          }
+        ).end(file.buffer);
+      });
+
+      const newFileEntry = {
         public_id: uploadResult.public_id,
         url: uploadResult.secure_url,
-        file_name: uploadedFileName || file.originalname,
+        file_name: uploadedFileName,
       };
+
+      // Save based on isSent flag
+      if (letterHead.isSent) {
+        letterHead.file_link.push(newFileEntry);
+      } else {
+        letterHead.file_link.push(newFileEntry);
+        letterHead.public_id.push(uploadResult.public_id);
+      }
+
+      uploadedFiles.push(newFileEntry);
     }
-    
-    
 
     // Optional: update other fields
     if (subject) letterHead.subject = subject;
