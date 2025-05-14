@@ -29,7 +29,7 @@ export const getAllPaymentRequests = async (req, res) => {
 export const approvePaymentRequest = async (req, res) => {
     try {
         const { requestId } = req.params;
-        const adminId = req.admin.id;
+        const adminId = req.user.id;
 
         const paymentRequest = await PaymentRequest.findById(requestId);
 
@@ -79,7 +79,7 @@ export const approvePaymentRequest = async (req, res) => {
 export const rejectPaymentRequest = async (req, res) => {
     try {
         const { requestId } = req.params;
-        const adminId = req.admin.id;
+        const adminId = req.user.id;
 
         const paymentRequest = await PaymentRequest.findById(requestId);
 
