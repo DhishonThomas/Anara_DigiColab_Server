@@ -13,6 +13,10 @@ const pdfFileSchema = new mongoose.Schema({
         type: String,   // Cloudinary's unique ID for the uploaded file
         required: true,
     },
+    letter_head_id: {
+        type: String,
+        required: true,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

@@ -12,7 +12,7 @@ export const generateLetterheadPDF = async (req, res) => {
     console.log("📝 PDF Generation triggered");
     
     try {
-        const { htmlContent, subject } = req.body;
+        const { htmlContent, subject, letterHeadId } = req.body;
         
         if (!htmlContent) {
             return res.status(400).json({ error: "HTML content is required" });
@@ -57,7 +57,8 @@ export const generateLetterheadPDF = async (req, res) => {
         const pdfRecord = await PDFFile.create({
             subject,             // Subject of the letterhead
             cloudinary_url: uploadResult.secure_url,  // URL of the uploaded PDF
-            public_id: uploadResult.public_id  // Cloudinary's unique public ID
+            public_id: uploadResult.public_id,  // Cloudinary's unique public ID
+            letter_head_id:letterHeadId
         });
 
         // Return the PDF URL in the response
