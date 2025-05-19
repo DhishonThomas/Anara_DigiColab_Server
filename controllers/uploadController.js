@@ -253,7 +253,7 @@ export const deleteFile = async (req, res) => {
 
 export const getFiles = async (req, res) => {
 try {
-  const files = await LetterHead.find().select("file_link image_id public_id subject body_text");
+  const files = await LetterHead.find();
 
   return res.status(200).json({ files });
 } catch (error) {
@@ -267,9 +267,9 @@ try {
 export const editFile = async (req, res) => {
   const { id } = req.params;
   const { file_ids, subject, body_text, image_id } = req.body;
-  console.log(file_ids);
+
   const fileIds = JSON.parse(req.body.file_ids);
-  console.log(fileIds);
+
   try {
     const letterHead = await LetterHead.findById(id);
     if (!letterHead) {
