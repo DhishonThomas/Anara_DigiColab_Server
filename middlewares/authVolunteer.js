@@ -19,3 +19,27 @@ export const isVolunteerAuthenticated = catchAsyncError(async (req, res, next) =
   
     next();
   });
+
+
+  export const checkBlockedVolunteer = async (req, res, next) => {
+    try {
+      const volunteerId = req.user?.id; // assuming req.user is set by auth middleware
+      if (!volunteerId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+  
+      const volunteer = await Volunteer.findById(volunteerId);
+      if (!volunteer) {
+        return res.status(404).json({ message: 'Volunteer not found' });
+      }
+  
+      if (volunteer.isBlocked) {
+        return res.status(403).json({ message: 'Access denied. Volunteer is blocked.' });
+      }
+  
+      next(); // continue to the next middleware or route
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+    }
+  };

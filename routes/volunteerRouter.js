@@ -12,20 +12,20 @@ import {
   getVolunteer,
   getUsersUnderVolunteer
 } from "../controllers/volunteerController.js";
-import { isVolunteerAuthenticated } from "../middlewares/authVolunteer.js";
+import { isVolunteerAuthenticated, checkBlockedVolunteer } from "../middlewares/authVolunteer.js";
 import { upload } from "../multer/upload.js";
 
 const router = express.Router();
 
-router.post("/send-email-otp", sendEmailOTP); //OTP for email verification
+router.post("/send-email-otp",checkBlockedVolunteer, sendEmailOTP); //OTP for email verification
 
-router.post("/verify-email-otp", verifyEmailOTP); //Verify OTP for email verification
+router.post("/verify-email-otp",checkBlockedVolunteer, verifyEmailOTP); //Verify OTP for email verification
 
 // router.post("/generate-temp-reg", generateTemporaryRegNumber); //Generate temporary registration number
 
 // router.get('/approve', approveEmail) //Approve email
 
-router.post("/register", upload.fields([
+router.post("/register",checkBlockedVolunteer, upload.fields([
   { name: "image", maxCount: 1 },
   { name: "undertaking", maxCount: 1 },
   { name: "policeVerification", maxCount: 1 },
