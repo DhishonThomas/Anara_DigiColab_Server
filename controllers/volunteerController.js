@@ -297,6 +297,10 @@ export const login = catchAsyncError(async (req, res, next) => {
 
   const volunteer = await Volunteer.findOne({ email }).select("+password");
 
+  if (volunteer.isBlocked) {
+    return res.status(403).json({ message: 'Access denied. Volunteer is blocked.' });
+  }
+
   if (!volunteer || !volunteer.accountVerified) {
     return next(new ErrorHandler("Account not verified. Please verify your email first.", 400));
   }

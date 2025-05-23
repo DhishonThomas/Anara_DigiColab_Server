@@ -309,6 +309,10 @@ export const login = catchAsyncError(async (req, res, next) => {
 
   const user = await User.findOne({ email }).select("+password");
 
+  if (user.isBlocked) {
+    return res.status(403).json({ message: 'Access denied. Candidate is blocked.' });
+  }
+
   if (!user || !user.accountVerified) {
     return next(new ErrorHandler("Account not verified. Please verify your email first.", 400));
   }
