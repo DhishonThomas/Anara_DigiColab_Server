@@ -3,7 +3,7 @@ import { Volunteer } from '../models/volunteerModel.js';
 
 export const createPaymentRequest = async (req, res) => {
     try {
-        const volunteerId = req.volunteer.id;
+        const volunteerId = req.user.id;  
         const { userCount } = req.body;
         
         if (userCount !== 50 && userCount !== 200 && userCount <= 200) {
@@ -43,7 +43,7 @@ export const createPaymentRequest = async (req, res) => {
 
 export const getVolunteerPaymentRequests = async (req, res) => {
     try {
-        const volunteerId = req.volunteer.id;
+        const volunteerId = req.user.id;  
         
         const paymentRequests = await PaymentRequest.find({ volunteer: volunteerId })
             .sort({ requestDate: -1 });
