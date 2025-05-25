@@ -16,7 +16,7 @@ import {
   selectCourse,
   getCoursesForUser,
 } from "../controllers/userController.js";
-import { isAuthenticated } from "../middlewares/auth.js";
+import { isAuthenticated, checkBlockedCandidate } from "../middlewares/auth.js";
 import { upload } from "../multer/upload.js";
 
 const router = express.Router();
@@ -51,17 +51,17 @@ router.put("/reset-password/:token", resetPassword); //Reset password with token
 // ----Dashboard-----
 router.post("/update-ccc-status", isAuthenticated,upload.fields([{ name: "cccCertificate", maxCount: 1 }]),updateCCCStatus); //Update CCC status with certificate upload
 
-router.get('/ccc-status', isAuthenticated, checkCCCStatus); //Get CCC status
+router.get('/ccc-status', isAuthenticated,checkBlockedCandidate, checkCCCStatus); //Get CCC status
 
-router.get("/courses", isAuthenticated,getCoursesForUser); //Courses
+router.get("/courses", isAuthenticated,checkBlockedCandidate,getCoursesForUser); //Courses
 
-router.get("/search-courses",isAuthenticated, searchCourses); //Search courses
+router.get("/search-courses",isAuthenticated,checkBlockedCandidate, searchCourses); //Search courses
 
-router.post("/select", isAuthenticated,selectCourse); //Select course
+router.post("/select", isAuthenticated,checkBlockedCandidate,selectCourse); //Select course
 
-router.post("/update-job-courses", isAuthenticated, updateCourses); //Update job-roles and course
+router.post("/update-job-courses", isAuthenticated,checkBlockedCandidate, updateCourses); //Update job-roles and course
 
-router.get("/course-selection", isAuthenticated, checkCourseSelection); //Check course selection
+router.get("/course-selection", isAuthenticated,checkBlockedCandidate, checkCourseSelection); //Check course selection
 
 
 

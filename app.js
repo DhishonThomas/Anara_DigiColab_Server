@@ -59,6 +59,8 @@ app.use('/api/v1/admin/payment-requests', adminPaymentRouter);
 app.use('/api/v1/admin/uploads', uploadRouter);
 
 app.use('/api/v1/admin/pdf',letterheadPdfRoutes);
+app.use('/api/v1/volunteer/payment-requests', volunteerPaymentRouter);
+
 removeUnverifiedAccounts();
 connection();
 
