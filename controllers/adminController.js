@@ -59,10 +59,6 @@ export const register = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
-
-
-
 //Login
 export const login = catchAsyncError(async (req, res, next) => {
   console.log(req.body);
@@ -85,10 +81,6 @@ export const login = catchAsyncError(async (req, res, next) => {
   adminToken(admin, 200, "admin logged in successfully.", res);
 });
 
-
-
-
-
 //Logout
 export const logout = catchAsyncError(async (req, res, next) => {
   res
@@ -103,22 +95,14 @@ export const logout = catchAsyncError(async (req, res, next) => {
     });
 });
 
-
-
-
 //GetAdmin
 export const getadmin = catchAsyncError(async (req, res, next) => {
   const admin = req.admin;
   res.status(200).json({
     success: true,
-    admin
+    admin,
   });
 });
-
-
-
-
-
 
 //Forgot Password
 export const forgotPassword = catchAsyncError(async (req, res, next) => {
@@ -160,10 +144,6 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
   }
 });
 
-
-
-
-
 //Reset Password
 export const resetPassword = catchAsyncError(async (req, res, next) => {
   const { token } = req.params;
@@ -184,13 +164,17 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   });
 
   if (!admin) {
-    return next(new ErrorHandler("Reset password token is invalid or has expired.", 400));
+    return next(
+      new ErrorHandler("Reset password token is invalid or has expired.", 400)
+    );
   }
 
   const { password, confirmPassword } = req.body;
 
   if (!password || !confirmPassword) {
-    return next(new ErrorHandler("Password and confirm password are required.", 400));
+    return next(
+      new ErrorHandler("Password and confirm password are required.", 400)
+    );
   }
 
   if (password !== confirmPassword) {
@@ -208,32 +192,51 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   adminToken(admin, 200, "Password reset successfully.", res);
 });
 
+//Get consolidated data for Admin Dashboard
+export const getConsolidatedData = catchAsyncError(async (req, res, next) => {
+  try {
+    // Get all volunteers
+    const volunteers = await Volunteer.find(
+      {},
+      "_id state city district pincode usersUnderVolunteer"
+    );
 
+    // Get all users
+    const users = await User.find({});
 
-
+    res.status(200).json({
+      success: true,
+      data: {
+        volunteers,
+        users,
+      },
+    });
+  } catch (error) {
+    return next(new ErrorHandler("Failed to fetch consolidated data.", 500));
+  }
+});
 
 //Get all volunteers in Admin Dashboard
 export const getAllVolunteers = catchAsyncError(async (req, res, next) => {
   try {
-    const volunteers = await Volunteer.find({});
+    const volunteers = await Volunteer.find({}).populate("usersUnderVolunteer");
 
-    const volunteerData = await Promise.all(
-      volunteers.map(async (volunteer) => {
-        const userCount = await User.countDocuments({ volunteerRegNum: volunteer.tempRegNumber });
-
-        return {
-          volunteerDetails: {
-            _id: volunteer._id,
-            name: volunteer.name,
-            tempRegNumber: volunteer.tempRegNumber,
-            isBlocked: volunteer.isBlocked,
-            email: volunteer.email
-            // Add more fields as needed
-          },
-          userCount,
-        };
-      })
-    );
+    const volunteerData = volunteers.map((volunteer) => {
+      return {
+        volunteerDetails: {
+          _id: volunteer._id,
+          name: volunteer.name,
+          tempRegNumber: volunteer.tempRegNumber,
+          isBlocked: volunteer.isBlocked,
+          email: volunteer.email,
+          state: volunteer.state,
+          city: volunteer.city,
+          district: volunteer.district,
+          pincode: volunteer.pincode,
+        },
+        users: volunteer.usersUnderVolunteer,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -245,22 +248,19 @@ export const getAllVolunteers = catchAsyncError(async (req, res, next) => {
   }
 });
 
-
-
-
-
-
-
 //Get all users in Admin Dashboard
 export const getAllUsers = catchAsyncError(async (req, res, next) => {
   try {
     const users = await User.find({}); // Add filter if needed
 
+    /*
+    // Not necessary for current requirements
     const userData = await Promise.all(
       users.map(async (user) => {
         // Get volunteer if you want to populate volunteer info
-        const volunteer = await Volunteer.findOne({ tempRegNumber: user.volunteerRegNum });
-
+        const volunteer = await Volunteer.findOne({
+          tempRegNumber: user.volunteerRegNum,
+        });
         return {
           userDetails: {
             _id: user._id,
@@ -275,13 +275,19 @@ export const getAllUsers = catchAsyncError(async (req, res, next) => {
           },
           volunteerInfo: volunteer
             ? {
-              name: volunteer.name,
-              email: volunteer.email,
-            }
+                name: volunteer.name,
+                email: volunteer.email,
+              }
             : null,
         };
       })
     );
+    */
+    const userData = users.map((user) => {
+      return {
+        userDetails: user,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -293,81 +299,77 @@ export const getAllUsers = catchAsyncError(async (req, res, next) => {
   }
 });
 
-
-
-
-
 // Count of users and volunteers
-export const CountVolunteersAndUsers = catchAsyncError(async (req, res, next) => {
-  try {
-    // Get count of volunteers
-    const volunteerCount = await Volunteer.countDocuments();
+export const CountVolunteersAndUsers = catchAsyncError(
+  async (req, res, next) => {
+    try {
+      // Get count of volunteers
+      const volunteerCount = await Volunteer.countDocuments();
 
-    // Get count of users
-    const userCount = await User.countDocuments();
+      // Get count of users
+      const userCount = await User.countDocuments();
 
-    // Return the counts
-    res.status(200).json({
-      success: true,
-      volunteerCount,
-      userCount,
-    });
-  } catch (error) {
-    return next(new ErrorHandler("Failed to fetch volunteer and user counts.", 500));
+      // Return the counts
+      res.status(200).json({
+        success: true,
+        volunteerCount,
+        userCount,
+      });
+    } catch (error) {
+      return next(
+        new ErrorHandler("Failed to fetch volunteer and user counts.", 500)
+      );
+    }
   }
-});
-
-
-
-
+);
 
 //Get candidates count per volunteer
-export const getCandidateCountPerVolunteer = catchAsyncError(async (req, res, next) => {
-  try {
-    const aggregation = await User.aggregate([
-      {
-        $group: {
-          _id: "$volunteerRegNum",
-          candidateCount: { $sum: 1 },
+export const getCandidateCountPerVolunteer = catchAsyncError(
+  async (req, res, next) => {
+    try {
+      const aggregation = await User.aggregate([
+        {
+          $group: {
+            _id: "$volunteerRegNum",
+            candidateCount: { $sum: 1 },
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "volunteers",
-          localField: "_id", // volunteerRegNum from User
-          foreignField: "tempRegNumber", // match with Volunteer.regNumber
-          as: "volunteerDetails",
+        {
+          $lookup: {
+            from: "volunteers",
+            localField: "_id", // volunteerRegNum from User
+            foreignField: "tempRegNumber", // match with Volunteer.regNumber
+            as: "volunteerDetails",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$volunteerDetails",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$volunteerDetails",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          volunteerRegNumber: "$_id",
-          candidateCount: 1,
-          volunteerName: "$volunteerDetails.name",
-          volunteerEmail: "$volunteerDetails.email",
+        {
+          $project: {
+            _id: 0,
+            volunteerRegNumber: "$_id",
+            candidateCount: 1,
+            volunteerName: "$volunteerDetails.name",
+            volunteerEmail: "$volunteerDetails.email",
+          },
         },
-      },
-    ]);
+      ]);
 
-    res.status(200).json({
-      success: true,
-      data: aggregation,
-    });
-  } catch (error) {
-    return next(new ErrorHandler("Failed to fetch candidate count per volunteer.", 500));
+      res.status(200).json({
+        success: true,
+        data: aggregation,
+      });
+    } catch (error) {
+      return next(
+        new ErrorHandler("Failed to fetch candidate count per volunteer.", 500)
+      );
+    }
   }
-});
-
-
-
-
+);
 
 //Get volunteers with users
 export const getVolunteerWithUsers = catchAsyncError(async (req, res, next) => {
@@ -391,21 +393,16 @@ export const getVolunteerWithUsers = catchAsyncError(async (req, res, next) => {
       registeredUsers: users,
       userCount: users.length,
     });
-
   } catch (error) {
     return next(new ErrorHandler("Failed to fetch volunteer and users.", 500));
   }
 });
 
-
-
-
-
 //Toggle volunteer block
 export const toggleVolunteerBlock = catchAsyncError(async (req, res, next) => {
   try {
-    const { regNumber } = req.params;      // regNumber from URL
-    const { block } = req.body;            // true to block, false to unblock
+    const { regNumber } = req.params; // regNumber from URL
+    const { block } = req.body; // true to block, false to unblock
 
     const volunteer = await Volunteer.findOne({ tempRegNumber: regNumber });
 
@@ -418,19 +415,17 @@ export const toggleVolunteerBlock = catchAsyncError(async (req, res, next) => {
     await volunteer.save();
 
     // Send response based on the block status
-    const action = block ? 'blocked' : 'unblocked';
+    const action = block ? "blocked" : "unblocked";
     res.status(200).json({
       success: true,
       message: `Volunteer has been ${action} successfully.`,
     });
   } catch (error) {
-    return next(new ErrorHandler("Failed to update volunteer block status.", 500));
+    return next(
+      new ErrorHandler("Failed to update volunteer block status.", 500)
+    );
   }
 });
-
-
-
-
 
 //Get user by reg num
 export const getUserByRegNumber = catchAsyncError(async (req, res, next) => {
@@ -447,21 +442,16 @@ export const getUserByRegNumber = catchAsyncError(async (req, res, next) => {
       success: true,
       user,
     });
-
   } catch (error) {
     return next(new ErrorHandler("Failed to fetch user details.", 500));
   }
 });
 
-
-
-
-
 //Toggle user block
 export const toggleUserBlock = catchAsyncError(async (req, res, next) => {
   try {
-    const { regNumber } = req.params;     // regNumber from URL
-    const { block } = req.body;           // true to block, false to unblock
+    const { regNumber } = req.params; // regNumber from URL
+    const { block } = req.body; // true to block, false to unblock
 
     const user = await User.findOne({ regNumber });
 
@@ -473,21 +463,17 @@ export const toggleUserBlock = catchAsyncError(async (req, res, next) => {
     user.isBlocked = block;
     await user.save();
 
-    const action = block ? 'blocked' : 'unblocked';
+    const action = block ? "blocked" : "unblocked";
     res.status(200).json({
       success: true,
       message: `User has been ${action} successfully.`,
     });
-
   } catch (error) {
     return next(new ErrorHandler("Failed to update user block status.", 500));
   }
 });
 
-
-
 //-------Job-roles----------------
-
 
 // Create a job role
 export const createJobRole = catchAsyncError(async (req, res, next) => {
@@ -502,23 +488,17 @@ export const createJobRole = catchAsyncError(async (req, res, next) => {
   res.status(201).json({
     success: true,
     message: "Job role created successfully",
-    jobRole
+    jobRole,
   });
 });
 
-
-
-
 // Get all job roles with course details
 export const getJobRoles = catchAsyncError(async (req, res, next) => {
-  const roles = await JobRole.find().populate('courses');
+  const roles = await JobRole.find().populate("courses");
   res.status(200).json({ success: true, roles });
 });
 
-
-
-
-// Delete job role 
+// Delete job role
 export const deleteJobRole = catchAsyncError(async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -535,7 +515,7 @@ export const deleteJobRole = catchAsyncError(async (req, res, next) => {
     for (const courseId of associatedCourses) {
       const otherJobRolesWithThisCourse = await JobRole.countDocuments({
         _id: { $ne: id },
-        courses: courseId
+        courses: courseId,
       });
 
       if (otherJobRolesWithThisCourse === 0) {
@@ -545,16 +525,14 @@ export const deleteJobRole = catchAsyncError(async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Job role and its exclusive courses deleted successfully"
+      message: "Job role and its exclusive courses deleted successfully",
     });
   } catch (error) {
-    return next(new ErrorHandler(`Failed to delete job role: ${error.message}`, 500));
+    return next(
+      new ErrorHandler(`Failed to delete job role: ${error.message}`, 500)
+    );
   }
 });
-
-
-
-
 
 //-------Courses----------------
 
@@ -584,8 +562,16 @@ export const createCourse = catchAsyncError(async (req, res, next) => {
   }
 
   try {
-    const image = await uploadToCloudinary(req.files.image[0].buffer, "courses");
-    const course = await Course.create({ title, description, image, qualifications });
+    const image = await uploadToCloudinary(
+      req.files.image[0].buffer,
+      "courses"
+    );
+    const course = await Course.create({
+      title,
+      description,
+      image,
+      qualifications,
+    });
 
     if (jobRoles && jobRoles.length > 0) {
       await JobRole.updateMany(
@@ -597,16 +583,13 @@ export const createCourse = catchAsyncError(async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Course created successfully",
-      course
+      course,
     });
   } catch (error) {
     console.log(error);
     return next(new ErrorHandler("Failed to create course.", 500));
   }
 });
-
-
-
 
 //Update course
 export const updateCourse = catchAsyncError(async (req, res, next) => {
@@ -625,9 +608,12 @@ export const updateCourse = catchAsyncError(async (req, res, next) => {
   if (req.files && req.files.image) {
     try {
       const url = course.image;
-      const public_id = url.split('/').slice(-2).join('/').split('.')[0]; // signatures/sample-image
+      const public_id = url.split("/").slice(-2).join("/").split(".")[0]; // signatures/sample-image
       await cloudinaryInstance.uploader.destroy(public_id);
-      const image = await uploadToCloudinary(req.files.image[0].buffer, "courses");
+      const image = await uploadToCloudinary(
+        req.files.image[0].buffer,
+        "courses"
+      );
       course.image = image;
     } catch (error) {
       console.log(error);
@@ -657,59 +643,54 @@ export const updateCourse = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
-
-
 // Get all courses with job roles
 export const getCourses = catchAsyncError(async (req, res, next) => {
   try {
     const courses = await Course.find().lean();
-    const jobRoles = await JobRole.find().populate('courses').lean();
+    const jobRoles = await JobRole.find().populate("courses").lean();
     const courseToJobRolesMap = {};
 
-    jobRoles.forEach(role => {
-      role.courses.forEach(course => {
+    jobRoles.forEach((role) => {
+      role.courses.forEach((course) => {
         if (!courseToJobRolesMap[course._id]) {
           courseToJobRolesMap[course._id] = [];
         }
         courseToJobRolesMap[course._id].push({
           roleId: role._id,
           roleName: role.name,
-          roleDescription: role.description
+          roleDescription: role.description,
         });
       });
     });
 
-    const enhancedCourses = courses.map(course => {
+    const enhancedCourses = courses.map((course) => {
       return {
         ...course,
-        jobRoles: courseToJobRolesMap[course._id] || []
+        jobRoles: courseToJobRolesMap[course._id] || [],
       };
     });
 
     res.status(200).json({
       success: true,
       courses: enhancedCourses,
-      jobRoles: jobRoles.map(role => ({
+      jobRoles: jobRoles.map((role) => ({
         _id: role._id,
         name: role.name,
         description: role.description,
-        courses: role.courses.map(course => ({
+        courses: role.courses.map((course) => ({
           _id: course._id,
           title: course.title,
           description: course.description,
-          image: course.image
-        }))
-      }))
+          image: course.image,
+        })),
+      })),
     });
   } catch (error) {
-    return next(new ErrorHandler("Failed to fetch courses and job roles.", 500));
+    return next(
+      new ErrorHandler("Failed to fetch courses and job roles.", 500)
+    );
   }
 });
-
-
-
-
 
 // Delete a course
 export const deleteCourse = catchAsyncError(async (req, res, next) => {
@@ -721,10 +702,10 @@ export const deleteCourse = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Course not found", 404));
   }
   const url = course.image;
-  const public_id = url.split('/').slice(-2).join('/').split('.')[0]; // signatures/sample-image
+  const public_id = url.split("/").slice(-2).join("/").split(".")[0]; // signatures/sample-image
 
   await cloudinaryInstance.uploader.destroy(public_id);
-  
+
   // Remove this course from all job roles that have it
   await JobRole.updateMany(
     { courses: course._id },
@@ -735,6 +716,6 @@ export const deleteCourse = catchAsyncError(async (req, res, next) => {
   await Course.findByIdAndDelete(id);
   res.status(200).json({
     success: true,
-    message: "Course deleted successfully"
+    message: "Course deleted successfully",
   });
 });

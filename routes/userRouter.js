@@ -15,6 +15,8 @@ import {
   searchCourses,
   selectCourse,
   getCoursesForUser,
+  resendEmailOTP,
+  checkOTPStatus,
 } from "../controllers/userController.js";
 import { isAuthenticated, checkBlockedCandidate } from "../middlewares/auth.js";
 import { upload } from "../multer/upload.js";
@@ -24,6 +26,10 @@ const router = express.Router();
 router.post("/send-email-otp", sendEmailOTP); //OTP for email verification
 
 router.post("/verify-email-otp", verifyEmailOTP); //Verify OTP for email verification
+
+router.post("/resend-otp", resendEmailOTP); //Resend OTP for email verification
+
+router.post('/check-otp-status', checkOTPStatus); //Check OTP status
 
 router.post(
   "/register",
@@ -66,4 +72,3 @@ router.get("/course-selection", isAuthenticated,checkBlockedCandidate, checkCour
 
 
 export default router;
-

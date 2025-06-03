@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema({
     required: [true, "Guardian name is required"]
   },
   age: {
-    type: Number
+    type: Number,
+    required: [true, "Age is required"],
   },
   address: {
     type: String,
@@ -22,6 +23,61 @@ const userSchema = new mongoose.Schema({
   currentAddress: {
     type: String,
     required: [true, "Current Address is required"]
+  },
+  state: {
+    type: String,
+    required: [true, "State is required"],
+    enum: [
+      "Andaman And Nicobar Islands",
+      "Andhra Pradesh",
+      "Arunachal Pradesh",
+      "Assam",
+      "Bihar",
+      "Chandigarh",
+      "Chhattisgarh",
+      "Delhi",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "Himachal Pradesh",
+      "Jammu And Kashmir",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "Ladakh",
+      "Lakshadweep",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Puducherry",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "Tamil Nadu",
+      "Telangana",
+      "The Dadra And Nagar Haveli And Daman And Diu",
+      "Tripura",
+      "Uttarakhand",
+      "Uttar Pradesh",
+      "West Bengal",
+    ],
+  },
+  district: {
+    type: String,
+    required: [true, "District is required"]
+  },
+  city: {
+    type: String,
+    required: [true, "City is required"]
+  },
+  pincode: {
+    type: String,
+    required: [true, "Pin code is required"],
+    match: [/^\d{6}$/, 'Please enter a valid 6-digit pin code']
   },
   dob: {
     type: Date,

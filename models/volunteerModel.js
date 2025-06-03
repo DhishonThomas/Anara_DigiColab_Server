@@ -7,49 +7,108 @@ import { type } from "os";
 const volunteerSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, "Name is required"]
+    required: [true, "Name is required"],
   },
 
   guardian: {
     type: String,
-    required: [true, "Guardian name is required"]
+    required: [true, "Guardian name is required"],
   },
 
   age: {
     type: Number,
-    required: [true, "Age is required"]
+    required: [true, "Age is required"],
   },
 
   address: {
     type: String,
-    required: [true, "Address is required"]
+    required: [true, "Address is required"],
   },
 
   currentAddress: {
     type: String,
-    required: [true, "Current Address is required"]
+    required: [true, "Current Address is required"],
+  },
+
+  state: {
+    type: String,
+    required: [true, "State is required"],
+    enum: [
+      "Andaman And Nicobar Islands",
+      "Andhra Pradesh",
+      "Arunachal Pradesh",
+      "Assam",
+      "Bihar",
+      "Chandigarh",
+      "Chhattisgarh",
+      "Delhi",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "Himachal Pradesh",
+      "Jammu And Kashmir",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "Ladakh",
+      "Lakshadweep",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Puducherry",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "Tamil Nadu",
+      "Telangana",
+      "The Dadra And Nagar Haveli And Daman And Diu",
+      "Tripura",
+      "Uttarakhand",
+      "Uttar Pradesh",
+      "West Bengal",
+    ],
+  },
+
+  district: {
+    type: String,
+    required: [true, "District is required"],
+  },
+
+  city: {
+    type: String,
+    required: [true, "City is required"],
+  },
+
+  pincode: {
+    type: String,
+    required: [true, "Pin code is required"],
+    match: [/^\d{6}$/, "Please enter a valid 6-digit pin code"],
   },
 
   dob: {
     type: Date,
-    required: [true, "Date of birth is required"]
+    required: [true, "Date of birth is required"],
   },
 
   gender: {
     type: String,
     required: [true, "Gender is required"],
-    enum: ["Male", "Female", "Other"]
+    enum: ["Male", "Female", "Other"],
   },
 
   image: {
     type: String,
-    required: [true, "Profile image is required"]
+    required: [true, "Profile image is required"],
   },
 
   undertaking: {
     type: Boolean,
     default: false,
-    required: [true, "Confirmation is required"]
+    required: [true, "Confirmation is required"],
   },
 
   policeVerification: {
@@ -73,13 +132,13 @@ const volunteerSchema = new mongoose.Schema({
 
   bankDocument: {
     type: String,
-    required: [true, "Bank document is required"]
+    required: [true, "Bank document is required"],
   },
 
   employmentStatus: {
     type: String,
     required: [true, "Employment status is required"],
-    enum: ["Employed", "Un-employed"]
+    enum: ["Employed", "Un-employed"],
   },
 
   monthlyIncomeRange: {
@@ -87,29 +146,35 @@ const volunteerSchema = new mongoose.Schema({
     enum: ["Upto 20000", "20001 to 50000", "50001 and above"],
     required: function () {
       return this.employmentStatus === "Employed";
-    }
+    },
   },
-
 
   educationQualification: {
     type: {
       degree: {
         type: String,
         required: [true, "Education qualification is required"],
-        enum: ["Class XII", "Diploma", "Bachelor's", "Master's", "Ph.D.", "Other"]
+        enum: [
+          "Class XII",
+          "Diploma",
+          "Bachelor's",
+          "Master's",
+          "Ph.D.",
+          "Other",
+        ],
       },
       yearOfCompletion: {
         type: Number,
         required: [true, "Year of completion is required"],
         min: [1900, "Year must be valid"],
-        max: [new Date().getFullYear(), "Year cannot be in the future"]
+        max: [new Date().getFullYear(), "Year cannot be in the future"],
       },
       certificate: {
         type: String,
-        required: [true, "Certificate document is required"]
-      }
+        required: [true, "Certificate document is required"],
+      },
     },
-    required: [true, "Education qualification details are required"]
+    required: [true, "Education qualification details are required"],
   },
 
   email: {
@@ -118,7 +183,7 @@ const volunteerSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email']
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
   },
 
   password: {
@@ -126,18 +191,18 @@ const volunteerSchema = new mongoose.Schema({
     required: [true, "Password is required"],
     minLength: [8, "Password must have at least 8 characters"],
     maxLength: [32, "Password cannot have more than 32 characters"],
-    select: false
+    select: false,
   },
 
   phone: {
     type: String,
     required: [true, "Phone number is required"],
-    unique: true
+    unique: true,
   },
 
   accountVerified: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   verificationCode: Number,
@@ -151,21 +216,33 @@ const volunteerSchema = new mongoose.Schema({
   },
 
   temp: {
-    type: String
+    type: String,
   },
 
   tempRegNumber: {
     type: String,
-    unique: true
+    unique: true,
   },
-  isBlocked:{
-    type:Boolean,
-    default:false
+
+  isBlocked: {
+    type: Boolean,
+    default: false,
   },
+
   isPayment: {
-    type:Boolean,
-    default:false
-  }
+    type: Boolean,
+    default: false,
+  },
+
+  usersUnderVolunteer: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      }
+    ],
+    default: [],
+  },
 });
 
 volunteerSchema.pre("save", async function (next) {
